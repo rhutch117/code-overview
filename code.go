@@ -14,14 +14,19 @@ type analysis struct {
 	count int
 }
 
-// An option represents options that can be passed to an analysis
+// An option represents options that can be passed to an analysis to customize it's inner workings
 type option func(*analysis) error
 
+// Analyze iterates over all files within a filepath, performing a code analysis on each. The results are
+// returned as an analysis struct
 func Analyze(opts ...option) (analysis, error) {
+	// Set the default values
 	a := analysis{
 		path: "./",
 		lang: "go",
 	}
+
+	// Update the analysis based on any options passed in
 	for _, opt := range opts {
 		err := opt(&a)
 		if err != nil {
@@ -32,9 +37,8 @@ func Analyze(opts ...option) (analysis, error) {
 	return a, nil
 }
 
-// findAllFilesInProject walks the file tree of Analysis.Path
-// appending all files to the Analysis.Files slice and incrementing
-// Analysis.Count
+// findAllFilesInProject walks the file tree of an analysis struct,
+// appending all files to the files slice and incrementing the file count
 func (a *analysis) findAllFilesInProject() {
 	// Clear any existing files
 	a.files = []string{}
@@ -42,13 +46,13 @@ func (a *analysis) findAllFilesInProject() {
 	filepath.WalkDir(a.path, a.addFileToAnalysis)
 }
 
-// addFileToAnalysis appends a filepath string to the slice of Files within an
-// Analysis struct
+// addFileToAnalysis appends a filepath string to the slice of files within an
+// analysis struct
 func (a *analysis) addFileToAnalysis(s string, d fs.DirEntry, err error) error {
 	if err != nil {
 		return err
 	}
-
+	// Ignore any git directories
 	if d.IsDir() && d.Name() == ".git" {
 		return filepath.SkipDir
 	}
