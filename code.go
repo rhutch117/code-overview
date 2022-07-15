@@ -1,10 +1,20 @@
 package code
 
 import (
+	"bufio"
 	"errors"
+	"fmt"
 	"io/fs"
+	"log"
+	"os"
 	"path/filepath"
+	"strings"
 )
+
+var keywords = map[string]bool{
+	"struct": true,
+	"func":   true,
+}
 
 // analysis holds the results of a project analysis
 type analysis struct {
@@ -34,6 +44,7 @@ func Analyze(opts ...option) (analysis, error) {
 		}
 	}
 	a.findAllFilesInProject()
+	a.analyzeFilesInProject()
 	return a, nil
 }
 
@@ -65,6 +76,26 @@ func (a *analysis) addFileToAnalysis(s string, d fs.DirEntry, err error) error {
 	return nil
 }
 
+// TODO: This needs to be concurrent using go routines
+func (a *analysis) analyzeFilesInProject() {
+	for _, f := range a.files {
+		file, err := os.Open(f)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer file.Close()
+
+		// limited to lines under 64k
+		scanner := bufio.NewScanner(file)
+		for scanner.Scan() {
+			parseLine(scanner.Text())
+		}
+		if err := scanner.Err(); err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
 // WithFilepath allows a user to customize which path is used for the analysis.bin
 // When calling analysis, this func can be passed as an option.
 func WithFilepath(p string) option {
@@ -79,4 +110,18 @@ func WithFilepath(p string) option {
 
 func (a analysis) NumberOfFiles() int {
 	return a.count
+}
+
+func parseLine(s string) {
+	words := strings.Fields(s)
+	for _, word := range words {
+		if IsKeyword(word, keywords) {
+			fmt.Println(word)
+		}
+	}
+}
+
+// Return whether the given word is a keyword or not
+func IsKeyword(s string, k map[string]bool) bool {
+	return k[s]
 }
