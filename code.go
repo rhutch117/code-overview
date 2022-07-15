@@ -19,7 +19,7 @@ var keywords = map[string]int{
 // analysis holds the results of a project analysis
 type analysis struct {
 	path      string
-	lang      string
+	ext       string
 	fileQueue []string
 	count     int
 	keywords  map[string]int
@@ -34,7 +34,7 @@ func Analyze(opts ...option) (analysis, error) {
 	// Set the default values
 	a := analysis{
 		path: "./",
-		lang: "go",
+		ext:  ".go",
 	}
 
 	// Update the analysis based on any options passed in
@@ -45,31 +45,35 @@ func Analyze(opts ...option) (analysis, error) {
 		}
 	}
 
-	a.updateFileQueue()
-	a.processFileQueue()
-	KeywordCount()
+	a.populateFileQueue()
+	fmt.Println(a.fileQueue)
+
+	// a.processFileQueue()
+	// KeywordCount()
 	return a, nil
 }
 
 // updateFileQueue walks the project dir adding each file to a fileQueue where it awaits processing
-func (a *analysis) updateFileQueue() {
+func (a *analysis) populateFileQueue() {
 	a.fileQueue = []string{}
 	a.count = 0
 	filepath.WalkDir(a.path, a.addFileToFileQueue)
 }
 
 // handleFileTreeObject appends a filepath to the fileQueue to await processing
-func (a *analysis) addFileToFileQueue(s string, d fs.DirEntry, err error) error {
+func (a *analysis) addFileToFileQueue(p string, d fs.DirEntry, err error) error {
 	if err != nil {
 		return err
 	}
+
 	// Ignore any git directories
 	if d.IsDir() && d.Name() == ".git" {
 		return filepath.SkipDir
 	}
 
-	if !d.IsDir() {
-		a.fileQueue = append(a.fileQueue, s)
+	// Only add files with the specified extension to the queue
+	if !d.IsDir() && filepath.Ext(d.Name()) == a.ext {
+		a.fileQueue = append(a.fileQueue, p)
 		a.count++
 	}
 
