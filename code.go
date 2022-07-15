@@ -18,11 +18,11 @@ var keywords = map[string]int{
 
 // analysis holds the results of a project analysis
 type analysis struct {
-	path     string
-	lang     string
-	files    []string
-	count    int
-	keywords map[string]int
+	path      string
+	lang      string
+	fileQueue []string
+	count     int
+	keywords  map[string]int
 }
 
 // An option represents options that can be passed to an analysis to customize it's inner workings
@@ -44,30 +44,22 @@ func Analyze(opts ...option) (analysis, error) {
 			return a, err
 		}
 	}
-	a.findAllFilesInProject()
-	a.analyzeFilesInProject()
+
+	a.updateFileQueue()
+	a.processFileQueue()
 	KeywordCount()
 	return a, nil
 }
 
-func KeywordCount() {
-	for key := range keywords {
-		fmt.Printf("%s: %d\n", key, keywords[key])
-	}
-}
-
-// findAllFilesInProject walks the file tree of an analysis struct,
-// appending all files to the files slice and incrementing the file count
-func (a *analysis) findAllFilesInProject() {
-	// Clear any existing files
-	a.files = []string{}
+// updateFileQueue walks the project dir adding each file to a fileQueue where it awaits processing
+func (a *analysis) updateFileQueue() {
+	a.fileQueue = []string{}
 	a.count = 0
-	filepath.WalkDir(a.path, a.addFileToAnalysis)
+	filepath.WalkDir(a.path, a.addFileToFileQueue)
 }
 
-// addFileToAnalysis appends a filepath string to the slice of files within an
-// analysis struct
-func (a *analysis) addFileToAnalysis(s string, d fs.DirEntry, err error) error {
+// handleFileTreeObject appends a filepath to the fileQueue to await processing
+func (a *analysis) addFileToFileQueue(s string, d fs.DirEntry, err error) error {
 	if err != nil {
 		return err
 	}
@@ -77,7 +69,7 @@ func (a *analysis) addFileToAnalysis(s string, d fs.DirEntry, err error) error {
 	}
 
 	if !d.IsDir() {
-		a.files = append(a.files, s)
+		a.fileQueue = append(a.fileQueue, s)
 		a.count++
 	}
 
@@ -85,8 +77,8 @@ func (a *analysis) addFileToAnalysis(s string, d fs.DirEntry, err error) error {
 }
 
 // TODO: This needs to be concurrent using go routines
-func (a *analysis) analyzeFilesInProject() {
-	for _, f := range a.files {
+func (a *analysis) processFileQueue() {
+	for _, f := range a.fileQueue {
 		file, err := os.Open(f)
 		if err != nil {
 			log.Fatal(err)
@@ -131,5 +123,12 @@ func parseLine(s string) {
 func IsKeyword(s string, k map[string]int) {
 	if _, ok := k[s]; ok {
 		k[s]++
+	}
+}
+
+// TODO: Delete this when done using it for testing
+func KeywordCount() {
+	for key := range keywords {
+		fmt.Printf("%s: %d\n", key, keywords[key])
 	}
 }
