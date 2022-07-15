@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 )
 
 var keywords = map[string]int{
@@ -46,10 +47,8 @@ func Analyze(opts ...option) (analysis, error) {
 	}
 
 	a.populateFileQueue()
-	fmt.Println(a.fileQueue)
-
-	// a.processFileQueue()
-	// KeywordCount()
+	a.processFileQueue()
+	KeywordCount()
 	return a, nil
 }
 
@@ -80,24 +79,33 @@ func (a *analysis) addFileToFileQueue(p string, d fs.DirEntry, err error) error 
 	return nil
 }
 
-// TODO: This needs to be concurrent using go routines
+// processFileQueue iterates over all the files of an analysis. Each file
+// is handled concurrently
 func (a *analysis) processFileQueue() {
-	for _, f := range a.fileQueue {
-		file, err := os.Open(f)
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer file.Close()
+	wg := sync.WaitGroup{}
+	wg.Add(len(a.fileQueue))
 
-		// limited to lines under 64k
-		scanner := bufio.NewScanner(file)
-		for scanner.Scan() {
-			parseLine(scanner.Text())
-		}
-		if err := scanner.Err(); err != nil {
-			log.Fatal(err)
-		}
+	for _, f := range a.fileQueue {
+		go func(f string) {
+			file, err := os.Open(f)
+			if err != nil {
+				log.Fatal(err)
+			}
+			defer file.Close()
+
+			// limited to lines under 64k
+			scanner := bufio.NewScanner(file)
+			for scanner.Scan() {
+				parseLine(scanner.Text())
+			}
+			if err := scanner.Err(); err != nil {
+				log.Fatal(err)
+			}
+			wg.Done()
+		}(f)
 	}
+
+	wg.Wait()
 }
 
 // WithFilepath allows a user to customize which path is used for the analysis.bin
