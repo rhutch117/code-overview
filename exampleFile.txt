@@ -1,5 +1,0 @@
-This is an example lin eof text
-here is another one
-are we able to scan this succesfully?
-s a func
-this should be picked up as a struct
