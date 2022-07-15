@@ -11,17 +11,18 @@ import (
 	"strings"
 )
 
-var keywords = map[string]bool{
-	"struct": true,
-	"func":   true,
+var keywords = map[string]int{
+	"struct": 0,
+	"func":   0,
 }
 
 // analysis holds the results of a project analysis
 type analysis struct {
-	path  string
-	lang  string
-	files []string
-	count int
+	path     string
+	lang     string
+	files    []string
+	count    int
+	keywords map[string]int
 }
 
 // An option represents options that can be passed to an analysis to customize it's inner workings
@@ -45,7 +46,14 @@ func Analyze(opts ...option) (analysis, error) {
 	}
 	a.findAllFilesInProject()
 	a.analyzeFilesInProject()
+	KeywordCount()
 	return a, nil
+}
+
+func KeywordCount() {
+	for key := range keywords {
+		fmt.Printf("%s: %d\n", key, keywords[key])
+	}
 }
 
 // findAllFilesInProject walks the file tree of an analysis struct,
@@ -115,13 +123,13 @@ func (a analysis) NumberOfFiles() int {
 func parseLine(s string) {
 	words := strings.Fields(s)
 	for _, word := range words {
-		if IsKeyword(word, keywords) {
-			fmt.Println(word)
-		}
+		IsKeyword(word, keywords)
 	}
 }
 
 // Return whether the given word is a keyword or not
-func IsKeyword(s string, k map[string]bool) bool {
-	return k[s]
+func IsKeyword(s string, k map[string]int) {
+	if _, ok := k[s]; ok {
+		k[s]++
+	}
 }
