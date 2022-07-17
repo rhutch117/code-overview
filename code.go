@@ -108,7 +108,7 @@ func (a *analysis) analyseFileData(b []byte) {
 	fmt.Println(string(b))
 }
 
-// WithFilepath allows a user to customize which path is used for the analysis.bin
+// WithFilepath allows a user to customize which path is used for the analysis
 // When calling analysis, this func can be passed as an option.
 func WithFilepath(p string) option {
 	return func(a *analysis) error {
