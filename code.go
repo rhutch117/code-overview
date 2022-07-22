@@ -55,27 +55,23 @@ func Analyze(opts ...option) (analysis, error) {
 func (a *analysis) populateFileQueue() {
 	a.fileQueue = []string{}
 	a.count = 0
-	filepath.WalkDir(a.path, a.addFileToFileQueue)
-}
+	filepath.WalkDir(a.path, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return nil
+		}
 
-// handleFileTreeObject appends a filepath to the fileQueue to await processing
-func (a *analysis) addFileToFileQueue(p string, d fs.DirEntry, err error) error {
-	if err != nil {
-		return err
-	}
+		// Ignore any git directories
+		if d.IsDir() && d.Name() == ".git" {
+			return filepath.SkipDir
+		}
+		// Only add files with the specified extension to the queue
+		if !d.IsDir() && filepath.Ext(d.Name()) == a.ext {
+			a.fileQueue = append(a.fileQueue, path)
+			a.count++
+		}
 
-	// Ignore any git directories
-	if d.IsDir() && d.Name() == ".git" {
-		return filepath.SkipDir
-	}
-
-	// Only add files with the specified extension to the queue
-	if !d.IsDir() && filepath.Ext(d.Name()) == a.ext {
-		a.fileQueue = append(a.fileQueue, p)
-		a.count++
-	}
-
-	return nil
+		return nil
+	})
 }
 
 // processFileQueue iterates over all the files of an analysis. Each file
@@ -104,8 +100,11 @@ func (a *analysis) processFileQueue() {
 	wg.Wait()
 }
 
+// analyseFileData
 func (a *analysis) analyseFileData(b []byte) {
-	fmt.Println(string(b))
+	for _, c := range b {
+		fmt.Println(string(c))
+	}
 }
 
 // WithFilepath allows a user to customize which path is used for the analysis
