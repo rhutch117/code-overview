@@ -12,11 +12,6 @@ import (
 	"sync"
 )
 
-var keywords = map[string]int{
-	"struct": 0,
-	"func":   0,
-}
-
 type structObject struct {
 	name   string
 	fields []string
@@ -28,7 +23,6 @@ type analysis struct {
 	ext       string
 	fileQueue []string
 	count     int
-	keywords  map[string]int
 	structs   []structObject
 }
 
@@ -141,18 +135,4 @@ func WithFilepath(p string) option {
 
 func (a analysis) NumberOfFiles() int {
 	return a.count
-}
-
-func parseLine(s string) {
-	words := strings.Fields(s)
-	for _, word := range words {
-		IsKeyword(word, keywords)
-	}
-}
-
-// Return whether the given word is a keyword or not
-func IsKeyword(s string, k map[string]int) {
-	if _, ok := k[s]; ok {
-		k[s]++
-	}
 }
