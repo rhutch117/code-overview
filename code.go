@@ -1,6 +1,7 @@
 package code
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -85,26 +86,31 @@ func (a *analysis) processFileQueue() {
 		// process each file in a new goroutine
 		go func(f string) {
 
-			// read the whole file into memory
-			data, err := os.ReadFile(f)
+			// read a line at a time
+			file, err := os.Open(f)
 			if err != nil {
-				log.Fatal(err)
+				log.Fatal("failed to open")
 			}
+			scanner := bufio.NewScanner(file)
+			for scanner.Scan() {
+				line := scanner.Text()
+				words := strings.Fields(line)
 
-			a.analyseFileData(data)
+				// if the 3rd word is "struct"
+				if len(words) < 3 {
+					continue
+				}
+
+				if words[2] == "struct" {
+					fmt.Println("found one")
+				}
+			}
 
 			wg.Done()
 		}(f)
 	}
 
 	wg.Wait()
-}
-
-// analyseFileData
-func (a *analysis) analyseFileData(b []byte) {
-	for _, c := range b {
-		fmt.Println(string(c))
-	}
 }
 
 // WithFilepath allows a user to customize which path is used for the analysis
