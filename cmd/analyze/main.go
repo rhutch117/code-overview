@@ -2,8 +2,14 @@ package main
 
 import (
 	"code"
+	"log"
 )
 
 func main() {
-	code.Analyze()
+	c, err := code.Analyze()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	c.PrintStructs()
 }

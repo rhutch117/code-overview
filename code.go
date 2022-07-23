@@ -17,6 +17,11 @@ var keywords = map[string]int{
 	"func":   0,
 }
 
+type structObject struct {
+	name   string
+	fields []string
+}
+
 // analysis holds the results of a project analysis
 type analysis struct {
 	path      string
@@ -24,6 +29,7 @@ type analysis struct {
 	fileQueue []string
 	count     int
 	keywords  map[string]int
+	structs   []structObject
 }
 
 // An option represents options that can be passed to an analysis to customize it's inner workings
@@ -48,8 +54,13 @@ func Analyze(opts ...option) (analysis, error) {
 
 	a.populateFileQueue()
 	a.processFileQueue()
-	KeywordCount()
 	return a, nil
+}
+
+func (a *analysis) PrintStructs() {
+	for _, s := range a.structs {
+		fmt.Println(s)
+	}
 }
 
 // updateFileQueue walks the project dir adding each file to a fileQueue where it awaits processing
@@ -102,7 +113,10 @@ func (a *analysis) processFileQueue() {
 				}
 
 				if words[2] == "struct" {
-					fmt.Println("found one")
+					s := structObject{
+						name: words[1],
+					}
+					a.structs = append(a.structs, s)
 				}
 			}
 
@@ -140,12 +154,5 @@ func parseLine(s string) {
 func IsKeyword(s string, k map[string]int) {
 	if _, ok := k[s]; ok {
 		k[s]++
-	}
-}
-
-// TODO: Delete this when done using it for testing
-func KeywordCount() {
-	for key := range keywords {
-		fmt.Printf("%s: %d\n", key, keywords[key])
 	}
 }
