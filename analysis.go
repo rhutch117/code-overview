@@ -17,12 +17,19 @@ type analysis struct {
 	fileQueue []string
 	count     int
 	structs   []structObject
+	funcs     []funcObject
 }
 
 // structObject represents a struct within the code
 type structObject struct {
 	name   string
 	fields []string
+}
+
+// funcObject represents a func within the code
+type funcObject struct {
+	name   string
+	params []string
 }
 
 // updateFileQueue walks the project dir adding each file to a fileQueue where it awaits processing
@@ -59,26 +66,26 @@ func (a *analysis) processFileQueue() {
 		// process each file in a new goroutine
 		go func(f string) {
 
-			// read a line at a time
 			file, err := os.Open(f)
 			if err != nil {
 				log.Fatal("failed to open")
 			}
+
+			// read a line at a time
 			scanner := bufio.NewScanner(file)
 			for scanner.Scan() {
 				line := scanner.Text()
 				words := strings.Fields(line)
 
-				// if the 3rd word is "struct"
-				if len(words) < 3 {
+				if len(words) < 1 {
 					continue
 				}
 
-				if words[2] == "struct" {
-					s := structObject{
-						name: words[1],
-					}
-					a.structs = append(a.structs, s)
+				switch words[0] {
+				case "type":
+					handleTypeKeyword(words, a)
+				case "func":
+					handleFuncKeyword(words, a)
 				}
 			}
 
@@ -87,4 +94,23 @@ func (a *analysis) processFileQueue() {
 	}
 
 	wg.Wait()
+}
+
+func handleTypeKeyword(words []string, a *analysis) {
+	if len(words) < 3 {
+		return
+	}
+	if words[2] == "struct" {
+		s := structObject{
+			name: words[1],
+		}
+		a.structs = append(a.structs, s)
+	}
+}
+
+func handleFuncKeyword(words []string, a *analysis) {
+	f := funcObject{
+		name: words[1],
+	}
+	a.funcs = append(a.funcs, f)
 }

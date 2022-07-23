@@ -49,6 +49,13 @@ func (a *analysis) PrintStructs() {
 	}
 }
 
+// PrintFuncs prints out the funcs found within the project
+func (a *analysis) PrintFuncs() {
+	for _, f := range a.funcs {
+		fmt.Println(f)
+	}
+}
+
 // NumberOfFiles returns the number of files found within the project
 func (a analysis) NumberOfFiles() int {
 	return a.count
