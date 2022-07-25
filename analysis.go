@@ -23,7 +23,12 @@ type analysis struct {
 // structObject represents a struct within the code
 type structObject struct {
 	name   string
-	fields []string
+	fields []structField
+}
+
+type structField struct {
+	fieldName string
+	fieldType string
 }
 
 // funcObject represents a func within the code
@@ -74,8 +79,7 @@ func (a *analysis) processFileQueue() {
 			// read a line at a time
 			scanner := bufio.NewScanner(file)
 			for scanner.Scan() {
-				line := scanner.Text()
-				words := strings.Fields(line)
+				words := strings.Fields(scanner.Text())
 
 				if len(words) < 1 {
 					continue
@@ -97,15 +101,42 @@ func (a *analysis) processFileQueue() {
 }
 
 func handleTypeKeyword(words []string, a *analysis, s *bufio.Scanner) {
-	if len(words) < 3 {
-		return
-	}
+	keywordBlock := []string{}
+	keywordBlock = append(keywordBlock, words...)
+
 	if words[2] == "struct" {
-		s := structObject{
-			name: words[1],
+		// Scan until we run into a closing brace
+		done := false
+		for !done {
+			_ = s.Scan()
+			words := strings.Fields(s.Text())
+			keywordBlock = append(keywordBlock, words...)
+			if words[0] == "}" {
+				done = true
+			}
 		}
+
+		s := createStructObject(keywordBlock)
 		a.structs = append(a.structs, s)
 	}
+}
+
+func createStructObject(b []string) structObject {
+	s := structObject{
+		name: b[1],
+	}
+
+	f := structField{}
+	for i, w := range b[4:] {
+		if i%2 == 0 {
+			f.fieldName = w
+		} else {
+			f.fieldType = w
+			s.fields = append(s.fields, f)
+		}
+	}
+
+	return s
 }
 
 func handleFuncKeyword(words []string, a *analysis, s *bufio.Scanner) {
