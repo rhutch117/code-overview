@@ -45,7 +45,10 @@ func WithFilepath(p string) option {
 // PrintStructs prints out the structs found within the project
 func (a *analysis) PrintStructs() {
 	for _, s := range a.structs {
-		fmt.Println(s)
+		fmt.Printf("%v\n", s.name)
+		for _, f := range s.fields {
+			fmt.Printf("\t%v: %v\n", f.fieldName, f.fieldType)
+		}
 	}
 }
 
