@@ -101,8 +101,8 @@ func (a *analysis) processFileQueue() {
 }
 
 func handleTypeKeyword(words []string, a *analysis, s *bufio.Scanner) {
-	keywordBlock := []string{}
-	keywordBlock = append(keywordBlock, words...)
+	codeBlock := []string{}
+	codeBlock = append(codeBlock, words...)
 
 	if words[2] == "struct" {
 		// Scan until we run into a closing brace
@@ -110,24 +110,25 @@ func handleTypeKeyword(words []string, a *analysis, s *bufio.Scanner) {
 		for !done {
 			_ = s.Scan()
 			words := strings.Fields(s.Text())
-			keywordBlock = append(keywordBlock, words...)
+			codeBlock = append(codeBlock, words...)
 			if words[0] == "}" {
 				done = true
 			}
 		}
 
-		s := createStructObject(keywordBlock)
+		// codeBlock now contains all code related to the struct
+		s := createStructObject(codeBlock)
 		a.structs = append(a.structs, s)
 	}
 }
 
-func createStructObject(b []string) structObject {
+func createStructObject(cb []string) structObject {
 	s := structObject{
-		name: b[1],
+		name: cb[1],
 	}
 
 	f := structField{}
-	for i, w := range b[4:] {
+	for i, w := range cb[4:] {
 		if i%2 == 0 {
 			f.fieldName = w
 		} else {
