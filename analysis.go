@@ -83,9 +83,9 @@ func (a *analysis) processFileQueue() {
 
 				switch words[0] {
 				case "type":
-					handleTypeKeyword(words, a)
+					handleTypeKeyword(words, a, scanner)
 				case "func":
-					handleFuncKeyword(words, a)
+					handleFuncKeyword(words, a, scanner)
 				}
 			}
 
@@ -96,7 +96,7 @@ func (a *analysis) processFileQueue() {
 	wg.Wait()
 }
 
-func handleTypeKeyword(words []string, a *analysis) {
+func handleTypeKeyword(words []string, a *analysis, s *bufio.Scanner) {
 	if len(words) < 3 {
 		return
 	}
@@ -108,7 +108,7 @@ func handleTypeKeyword(words []string, a *analysis) {
 	}
 }
 
-func handleFuncKeyword(words []string, a *analysis) {
+func handleFuncKeyword(words []string, a *analysis, s *bufio.Scanner) {
 	f := funcObject{
 		name: words[1],
 	}
